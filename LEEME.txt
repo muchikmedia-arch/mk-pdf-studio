@@ -1,0 +1,35 @@
+MK PDF Studio - Versión 1.1.0 (Etapa 2)
+Desarrollado por Alex Vasquez Caballero - Muchik Media | Apps
+Web: www.muchikmedia.com   Correo: muchikmedia@gmail.com
+
+Programa gratuito para la oficina. Funciona sin internet: los documentos nunca
+salen de la computadora.
+
+QUÉ PUEDE HACER
+  Convertir
+    - PDF a Word (también PDF escaneados, con reconocimiento de texto OCR)
+    - PDF a Excel (tablas con números listos para sumar)
+    - PDF a PowerPoint (texto editable o como imagen)
+    - PDF escaneado a PDF con texto (para buscar y copiar)
+    - Imagen a texto
+    - PDF a imágenes y Word a imágenes
+  Editar PDF
+    - Escribir texto, corregir texto del documento, resaltar, subrayar, tachar
+    - Notas, tapar datos (se borran de verdad), firma o sello guardado,
+      sello «Recibido» con fecha y hora, dibujar, recuadros, llenar formularios
+  Organizar páginas
+    - Mover, quitar, girar, agregar páginas, hojas en blanco y extraer páginas
+  Herramientas
+    - Foliar (de adelante hacia atrás o de atrás hacia adelante)
+    - Todas las páginas a tamaño A4 (o Carta / Oficio)
+    - Unir / armar expediente (PDF, fotos, Word y Excel)
+    - Dividir, comprimir, fotos a PDF tipo escáner
+    - Marca de agua, contraseña, limpiar escaneos, buscar en una carpeta
+
+REQUISITOS
+  Windows 10 u 11 de 64 bits. Para unir archivos de Word o Excel y para
+  «Word a imágenes» se necesita Microsoft Office (o LibreOffice) instalado.
+
+NOTAS
+  - El archivo original nunca se modifica: siempre se guarda una copia nueva.
+  - Los ajustes y el registro de errores se guardan en %APPDATA%\MK PDF Studio

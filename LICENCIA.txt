@@ -1,0 +1,18 @@
+MK PDF Studio
+Copyright (C) 2026 Alex Vasquez Caballero - Muchik Media | Apps
+www.muchikmedia.com - muchikmedia@gmail.com
+
+Este programa es software libre: puede redistribuirlo y/o modificarlo bajo los
+términos de la Licencia Pública General Affero de GNU (GNU AGPL) publicada por
+la Free Software Foundation, versión 3 de la Licencia.
+
+Este programa se distribuye con la esperanza de que sea útil, pero SIN NINGUNA
+GARANTÍA; ni siquiera la garantía implícita de COMERCIABILIDAD o IDONEIDAD PARA
+UN PROPÓSITO PARTICULAR. Consulte la Licencia Pública General Affero de GNU para
+más detalles.
+
+Texto completo de la licencia: https://www.gnu.org/licenses/agpl-3.0.html
+
+El código fuente completo del programa está incluido en la carpeta "app" de la
+instalación. Las licencias de los componentes de código abierto que usa el
+programa están en la carpeta "licencias".

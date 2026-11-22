@@ -1,0 +1,13 @@
+{
+  "version": "1.2.0",
+  "date": "2026-11-22",
+  "notes": [
+    "Aviso de nuevas versiones: el programa se actualiza con un clic",
+    "Nueva pestaña Editar PDF: escribir, corregir texto, resaltar, firmas, sello Recibido, tapar datos y formularios",
+    "PDF a PowerPoint y Word a imágenes",
+    "El logo del programa aparece en la barra de tareas"
+  ],
+  "installer": "https://github.com/muchikmedia-arch/mk-pdf-studio/releases/download/v1.2.0/MK-PDF-Studio-Instalador-1.2.0.exe",
+  "sha256": "1826b6daf696c932d800f1a58cf3fea4d13abd90aa65438eab878c64e0069991",
+  "size": 75198697
+}

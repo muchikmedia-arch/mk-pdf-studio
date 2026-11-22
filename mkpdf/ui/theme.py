@@ -133,7 +133,7 @@ QLabel#ErrorText {{ color: {c['danger']}; }}
 /* Controles */
 QLineEdit, QSpinBox, QComboBox, QDoubleSpinBox {{ background: {c['surface']}; border: 1px solid {c['border']};
     border-radius: 8px; padding: {px(7)}px {px(10)}px; min-height: {px(22)}px; }}
-QLineEdit:focus, QSpinBox:focus, QComboBox:focus {{ border: 2px solid {c['accent']}; }}
+QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QComboBox:focus {{ border: 2px solid {c['accent']}; }}
 QComboBox QAbstractItemView {{ background: {c['surface']}; border: 1px solid {c['border']};
     selection-background-color: {c['accent_soft']}; selection-color: {c['text']}; padding: 4px; }}
 QComboBox::drop-down {{ border: none; width: {px(26)}px; }}
@@ -145,14 +145,15 @@ QRadioButton::indicator:checked {{ border-color: {c['accent']};
     background: qradialgradient(cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 {c['accent']}, stop:0.48 {c['accent']}, stop:0.56 {c['surface']}, stop:1 {c['surface']}); }}
 QCheckBox::indicator {{ width: {px(18)}px; height: {px(18)}px; border-radius: 5px; border: 2px solid {c['muted']}; background: {c['surface']}; }}
 QCheckBox::indicator:checked {{ background: {c['accent']}; border-color: {c['accent']}; image: url({_ASSETS}/check.svg); }}
-QSpinBox {{ padding-right: {px(30)}px; }}
-QSpinBox::up-button {{ subcontrol-origin: border; subcontrol-position: top right; width: {px(26)}px;
+QSpinBox, QDoubleSpinBox {{ padding-right: {px(30)}px; }}
+QPushButton:checked {{ background: {c['accent_soft']}; border: 2px solid {c['accent']}; color: {c['accent']}; }}
+QSpinBox::up-button, QDoubleSpinBox::up-button {{ subcontrol-origin: border; subcontrol-position: top right; width: {px(26)}px;
     border-left: 1px solid {c['border']}; border-top-right-radius: 8px; background: {c['surface2']}; }}
-QSpinBox::down-button {{ subcontrol-origin: border; subcontrol-position: bottom right; width: {px(26)}px;
+QSpinBox::down-button, QDoubleSpinBox::down-button {{ subcontrol-origin: border; subcontrol-position: bottom right; width: {px(26)}px;
     border-left: 1px solid {c['border']}; border-bottom-right-radius: 8px; background: {c['surface2']}; }}
-QSpinBox::up-button:hover, QSpinBox::down-button:hover {{ background: {c['accent_soft']}; }}
-QSpinBox::up-arrow {{ image: url({_ASSETS}/up.svg); width: {px(11)}px; height: {px(11)}px; }}
-QSpinBox::down-arrow {{ image: url({_ASSETS}/down.svg); width: {px(11)}px; height: {px(11)}px; }}
+QSpinBox::up-button:hover, QSpinBox::down-button:hover, QDoubleSpinBox::up-button:hover, QDoubleSpinBox::down-button:hover {{ background: {c['accent_soft']}; }}
+QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {{ image: url({_ASSETS}/up.svg); width: {px(11)}px; height: {px(11)}px; }}
+QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {{ image: url({_ASSETS}/down.svg); width: {px(11)}px; height: {px(11)}px; }}
 QComboBox::down-arrow {{ image: url({_ASSETS}/down.svg); width: {px(13)}px; height: {px(13)}px; }}
 QProgressBar {{ background: {c['surface2']}; border: none; border-radius: {px(7)}px; height: {px(14)}px;
     text-align: center; color: transparent; }}

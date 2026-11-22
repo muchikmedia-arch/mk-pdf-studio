@@ -8,6 +8,8 @@ from .dialogs import AboutDialog, SettingsDialog
 from .editor import EditorTab
 from .organize import OrganizeTab
 from .updater import UpdateBar, UpdateChecker, UpdateDialog
+from .bgpage import BgRemovePage
+from .share import ShareDialog
 from .widgets import Card, IconLabel, icon_button, refresh_button_icons
 from ..config import APP_EDITION, APP_NAME, APP_VERSION, COMPANY, DEVELOPER, settings
 
@@ -117,6 +119,8 @@ TOOLS_ITEMS = [
     ("photos", "camera", "Fotos a PDF (escáner)", "Convierte fotos del celular en un documento limpio.",
      pages.PhotosPage),
     ("water", "drop", "Marca de agua", "Agrega COPIA, BORRADOR u otro texto sobre las páginas.", pages.WatermarkPage),
+    ("bg", "magic", "Quitar fondo a firma o sello", "Deja la firma o el sello sin fondo (PNG) y mejora su color.",
+     BgRemovePage),
     ("pass", "lock", "Contraseña", "Pon o quita la contraseña de un PDF.", pages.PasswordPage),
     ("clean", "clean", "Limpiar escaneo", "Quita hojas en blanco, gira y endereza páginas escaneadas.",
      pages.CleanPage),
@@ -170,6 +174,10 @@ class MainWindow(QMainWindow):
             self.tab_group.addButton(b, i)
             hl.addWidget(b, 0, Qt.AlignBottom)
         hl.addStretch(1)
+        self.share_btn = icon_button("Compartir", "share", "HeaderButton",
+                                     tooltip="Enviar el programa a tus compañeros")
+        self.share_btn.clicked.connect(lambda: ShareDialog(self).exec())
+        hl.addWidget(self.share_btn, 0, Qt.AlignVCenter)
         self.settings_btn = icon_button("Ajustes", "settings", "HeaderButton")
         self.about_btn = icon_button("Acerca de", "info", "HeaderButton")
         self.settings_btn.clicked.connect(self.open_settings)
@@ -227,7 +235,11 @@ class MainWindow(QMainWindow):
 
     def resizeEvent(self, e):
         super().resizeEvent(e)
-        self.subtitle.setVisible(self.width() >= theme.px(1180))
+        self.subtitle.setVisible(self.width() >= theme.px(1300))
+        compact = self.width() < theme.px(1180)
+        for b, txt in ((self.share_btn, "Compartir"), (self.settings_btn, "Ajustes"), (self.about_btn, "Acerca de")):
+            b.setText("" if compact else txt)
+            b.setToolTip(txt)
 
     def closeEvent(self, e):
         if self.editor.has_unsaved():

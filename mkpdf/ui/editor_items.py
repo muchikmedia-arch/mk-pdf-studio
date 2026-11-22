@@ -200,6 +200,7 @@ class ResizableItem(QGraphicsItem, Overlay):
             self._resizing = False
             if self.editor and self._start_rect != self.r:
                 self.editor.push_undo(("resize", self, self._start_rect))
+                self.editor._selection_changed()
             e.accept()
             return
         super().mouseReleaseEvent(e)

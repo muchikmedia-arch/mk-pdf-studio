@@ -282,9 +282,26 @@ def folio_numbers(n, direction="adelante", start=1):
     return [start + i for i in range(n)]
 
 
-def _stamp_folio(page, text, position="sup-der", size=14, box=True, margin=22.0):
+FOLIO_COLORS = {
+    "negro": (0.0, 0.0, 0.0),
+    "azul": (0.05, 0.22, 0.62),    # azul de lapicero
+    "rojo": (0.80, 0.07, 0.12),    # rojo de lapicero
+}
+
+
+def _color(c):
+    if isinstance(c, str):
+        if c.startswith("#") and len(c) == 7:
+            return tuple(int(c[i:i + 2], 16) / 255.0 for i in (1, 3, 5))
+        return FOLIO_COLORS.get(c, (0, 0, 0))
+    return tuple(c) if c else (0, 0, 0)
+
+
+def _stamp_folio(page, text, position="sup-der", size=14, box=True, color=(0, 0, 0), margin=22.0):
+    """Escribe el folio en la página. Devuelve el recuadro usado (coordenadas de la página)."""
     if page.rotation:
         page.remove_rotation()   # mismo aspecto, coordenadas simples
+    col = _color(color)
     font = pymupdf.Font("hebo")
     tw_w = font.text_length(text, fontsize=size)
     bw, bh = tw_w + size * 1.0, size * 1.6
@@ -298,46 +315,67 @@ def _stamp_folio(page, text, position="sup-der", size=14, box=True, margin=22.0)
         x0 = (vr.width - bw) / 2
     r = pymupdf.Rect(x0, y0, x0 + bw, y0 + bh)
     if box:
-        page.draw_rect(r, color=(0, 0, 0), fill=(1, 1, 1), width=0.9, overlay=True)
+        page.draw_rect(r, color=col, fill=(1, 1, 1), width=0.9, overlay=True)
     page.insert_text((x0 + (bw - tw_w) / 2, y0 + bh / 2 + size * 0.36), text, fontsize=size,
-                     fontname="hebo", color=(0, 0, 0))
+                     fontname="hebo", color=col)
+    return r
 
 
-def _folio_text(num, zeros=0, prefix=""):
-    return f"{prefix}{str(num).zfill(zeros) if zeros else num}"
+def _folio_text(num, zeros=0, prefix="", total=None):
+    n = str(num).zfill(zeros) if zeros else str(num)
+    if total is not None:
+        t = str(total).zfill(zeros) if zeros else str(total)
+        return f"{prefix}{n}/{t}"
+    return f"{prefix}{n}"
+
+
+def _folio_plan(doc, direction, start, skip):
+    skip = max(0, min(int(skip), doc.page_count - 1))
+    pages = list(range(skip, doc.page_count))
+    numbers = folio_numbers(len(pages), direction, start)
+    total = start + len(pages) - 1
+    return pages, numbers, total
 
 
 def foliate(src, dst, direction="adelante", start=1, position="sup-der", size=14, box=True,
-            zeros=0, prefix="", skip=0, progress=NULL_PROGRESS):
-    """Numera las hojas (foliación). direction: 'adelante' o 'atras' (de la última a la primera)."""
+            zeros=0, prefix="", skip=0, fmt="numero", color="negro", progress=NULL_PROGRESS):
+    """Numera las hojas (foliación).
+
+    direction: 'adelante' o 'atras' (de la última a la primera).
+    fmt: 'numero' (1, 2, 3…) o 'total' (1/20, 2/20 … 20/20).
+    """
     doc = open_pdf(src)
-    skip = max(0, min(int(skip), doc.page_count - 1))
-    pages = list(range(skip, doc.page_count))
-    numbers = folio_numbers(len(pages), direction, start)
+    pages, numbers, total = _folio_plan(doc, direction, start, skip)
+    tot = total if fmt == "total" else None
     for k, (i, num) in enumerate(zip(pages, numbers)):
         if k % 10 == 0:
             progress(k / max(1, len(pages)), f"Foliando página {i + 1}")
-        _stamp_folio(doc[i], _folio_text(num, zeros, prefix), position, size, box)
+        _stamp_folio(doc[i], _folio_text(num, zeros, prefix, tot), position, size, box, color)
     save_pdf(doc, dst)
     doc.close()
-    return {"pages": len(pages), "first": numbers[0] if numbers else None, "last": numbers[-1] if numbers else None}
+    return {"pages": len(pages), "first": _folio_text(numbers[0], zeros, "", tot) if numbers else None,
+            "last": _folio_text(numbers[-1], zeros, "", tot) if numbers else None}
 
 
 def folio_preview(src, direction="adelante", start=1, position="sup-der", size=14, box=True,
-                  zeros=0, prefix="", skip=0, dpi=42):
-    """Imágenes (PNG) de la primera y la última hoja foliadas, para mostrar antes de guardar."""
+                  zeros=0, prefix="", skip=0, fmt="numero", color="negro", dpi=42):
+    """Primera y última hoja foliadas, para mostrar antes de guardar.
+
+    Devuelve lista de (número de hoja, texto del folio, PNG, recuadro del folio en píxeles).
+    """
     doc = open_pdf(src)
-    skip = max(0, min(int(skip), doc.page_count - 1))
-    pages = list(range(skip, doc.page_count))
-    numbers = folio_numbers(len(pages), direction, start)
+    pages, numbers, total = _folio_plan(doc, direction, start, skip)
+    tot = total if fmt == "total" else None
     picks = [0, len(pages) - 1] if len(pages) > 1 else [0]
     out = []
+    k_px = dpi / 72.0
     for k in picks:
         tmp = pymupdf.open()
         tmp.insert_pdf(doc, from_page=pages[k], to_page=pages[k])
-        _stamp_folio(tmp[0], _folio_text(numbers[k], zeros, prefix), position, size, box)
+        text = _folio_text(numbers[k], zeros, prefix, tot)
+        r = _stamp_folio(tmp[0], text, position, size, box, color)
         pix = tmp[0].get_pixmap(dpi=dpi)
-        out.append((pages[k] + 1, numbers[k], pix.tobytes("png")))
+        out.append((pages[k] + 1, text, pix.tobytes("png"), (r.x0 * k_px, r.y0 * k_px, r.x1 * k_px, r.y1 * k_px)))
         tmp.close()
     doc.close()
     return out

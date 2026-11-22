@@ -4,7 +4,7 @@ import os
 import pymupdf
 from PySide6.QtCore import QPointF, QRectF, QSize, Qt, QTimer
 from PySide6.QtGui import QBrush, QColor, QKeySequence, QPainter, QPen, QPixmap, QShortcut
-from PySide6.QtWidgets import (QApplication, QButtonGroup, QCheckBox, QColorDialog, QComboBox, QFrame,
+from PySide6.QtWidgets import (QApplication, QButtonGroup, QCheckBox, QColorDialog, QComboBox, QDoubleSpinBox, QFrame,
                                QGraphicsRectItem, QGraphicsScene, QGraphicsView, QHBoxLayout, QLabel, QLineEdit,
                                QPushButton, QScrollArea, QSizePolicy, QSpinBox, QToolButton, QVBoxLayout, QWidget)
 
@@ -181,10 +181,7 @@ class EditorTab(QWidget):
         self.title.setMinimumWidth(80)
         self.title.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
         tl.addWidget(self.title, 1)
-        other = QPushButton("Abrir otro PDF")
-        other.setObjectName("Flat")
-        other.clicked.connect(self.close_doc)
-        tl.addWidget(other)
+
         self.b_prev = icon_button("", "prev", tooltip="Página anterior")
         self.page_edit = QLineEdit("1")
         from PySide6.QtGui import QIntValidator
@@ -211,6 +208,9 @@ class EditorTab(QWidget):
         self.save_btn = icon_button("Guardar PDF", "save", "Primary")
         self.save_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         tl.addWidget(self.save_btn)
+        self.exit_btn = icon_button("Salir", "exit", tooltip="Terminar y volver al inicio de esta sección")
+        self.exit_btn.clicked.connect(self.close_doc)
+        tl.addWidget(self.exit_btn)
         ev.addWidget(top)
 
         body = QHBoxLayout()
@@ -297,9 +297,40 @@ class EditorTab(QWidget):
         sw.addStretch(1)
         cr.addLayout(sw)
         pl.addWidget(self.color_row)
+        self.size_row = QWidget()
+        szl = QVBoxLayout(self.size_row)
+        szl.setContentsMargins(0, 0, 0, 0)
+        szl.setSpacing(4)
+        szl.addWidget(QLabel("Tamaño exacto"))
+        self.size_w = QDoubleSpinBox()
+        self.size_h = QDoubleSpinBox()
+        for sp, lab in ((self.size_w, "Ancho"), (self.size_h, "Alto")):
+            sp.setRange(0.2, 60.0)
+            sp.setDecimals(1)
+            sp.setSingleStep(0.1)
+            sp.setSuffix(" cm")
+            r = QHBoxLayout()
+            l = QLabel(lab)
+            l.setMinimumWidth(theme.px(44))
+            r.addWidget(l)
+            r.addWidget(sp, 1)
+            szl.addLayout(r)
+        self.size_keep = QCheckBox("Sin deformar")
+        self.size_keep.setChecked(True)
+        szl.addWidget(self.size_keep)
+        self.size_w.valueChanged.connect(lambda v: self._size_changed("w"))
+        self.size_h.valueChanged.connect(lambda v: self._size_changed("h"))
+        pl.addWidget(self.size_row)
         sdl.addWidget(self.props)
         sdl.addStretch(1)
-        body.addWidget(side)
+        side_scroll = QScrollArea()
+        side_scroll.setWidget(side)
+        side_scroll.setWidgetResizable(True)
+        side_scroll.setFrameShape(QFrame.NoFrame)
+        side_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        side_scroll.setFixedWidth(theme.px(206) + 14)
+        side_scroll.setObjectName("Header")
+        body.addWidget(side_scroll)
 
         center = QVBoxLayout()
         center.setContentsMargins(0, 0, 0, 0)
@@ -444,8 +475,8 @@ class EditorTab(QWidget):
         self._update_undo()
 
     def close_doc(self):
-        if self.dirty and not ask(self, "Cambios sin guardar", "Hay cambios sin guardar. ¿Quieres descartarlos?",
-                                  "Descartar", "Cancelar"):
+        if self.dirty and not ask(self, "Cambios sin guardar", "Hiciste cambios que todavía no guardaste. "
+                                  "¿Quieres salir sin guardar?", "Salir sin guardar", "Volver"):
             return
         self._clear()
         self.dirty = False
@@ -655,10 +686,12 @@ class EditorTab(QWidget):
         show_width = tool in ("pen", "rect") or kind in ("ink", "rect")
         show_color = tool in ("text", "pen", "rect", "highlight", "underline", "strike") or kind in (
             "text", "ink", "rect", "highlight", "underline", "strike")
+        show_size = kind in ("image", "stamp")
         self.font_row.setVisible(show_font)
         self.width_row.setVisible(show_width)
         self.color_row.setVisible(show_color)
-        self.props.setVisible(show_font or show_width or show_color)
+        self.size_row.setVisible(show_size)
+        self.props.setVisible(show_font or show_width or show_color or show_size)
 
     def current_color(self):
         b = self.color_group.checkedButton()
@@ -689,6 +722,35 @@ class EditorTab(QWidget):
                     b.blockSignals(False)
             for w in widgets:
                 w.blockSignals(False)
+            if isinstance(it, (ImageBox, StampBox)):
+                self._show_size(it)
+
+    CM = 72.0 / 2.54
+
+    def _show_size(self, it):
+        for sp in (self.size_w, self.size_h):
+            sp.blockSignals(True)
+        self.size_w.setValue(it.r.width() / self.CM)
+        self.size_h.setValue(it.r.height() / self.CM)
+        for sp in (self.size_w, self.size_h):
+            sp.blockSignals(False)
+
+    def _size_changed(self, which):
+        sel = [i for i in self.scene.selectedItems() if isinstance(i, (ImageBox, StampBox))]
+        if len(sel) != 1:
+            return
+        it = sel[0]
+        old = QRectF(it.r)
+        ratio = old.height() / max(0.01, old.width())
+        w, h = self.size_w.value() * self.CM, self.size_h.value() * self.CM
+        if self.size_keep.isChecked():
+            if which == "w":
+                h = w * ratio
+            else:
+                w = h / max(0.01, ratio)
+        it.set_rect(QRectF(old.left(), old.top(), w, h))
+        self._show_size(it)
+        self.push_undo(("resize", it, old))
 
     def _props_changed(self, *a):
         st = settings()
@@ -783,6 +845,7 @@ class EditorTab(QWidget):
                 it.setPos(old)
         elif kind == "resize":
             a[1].set_rect(a[2])
+            self._selection_changed()
         elif kind == "fix":
             page_no, data = a[1], a[2]
             ec.restore_page(self.doc, page_no, data)
@@ -1028,11 +1091,8 @@ class EditorTab(QWidget):
         if pm.isNull():
             inform(self, "Imagen no válida", "No se pudo leer esa imagen.", error=True)
             return
-        w = 150.0
+        w = getattr(dlg, "chosen_width_cm", 5.0) * self.CM
         h = w * pm.height() / max(1, pm.width())
-        if h > 110:
-            h = 110.0
-            w = h * pm.width() / max(1, pm.height())
         self._place_box(ImageBox(png, w, h), w, h)
 
     def place_stamp(self):

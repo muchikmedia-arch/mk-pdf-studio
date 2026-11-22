@@ -4,7 +4,7 @@ import os
 import sys
 
 APP_NAME = "MK PDF Studio"
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.3.0"
 APP_EDITION = "Etapa 2"
 APP_YEAR = "2026"
 DEVELOPER = "Alex Vasquez Caballero"
@@ -48,6 +48,7 @@ DEFAULTS = {
     "editor_font": "Arial",
     "editor_size": 12,
     "check_updates": True,
+    "folio_color": "azul",
 }
 
 

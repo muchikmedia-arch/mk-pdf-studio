@@ -2,8 +2,8 @@
 import os
 
 import pymupdf
-from PySide6.QtCore import QSize, Qt, QTimer
-from PySide6.QtGui import QColor, QIcon, QKeySequence, QPainter, QPixmap, QShortcut, QTransform
+from PySide6.QtCore import QPoint, QSize, Qt, QTimer, Signal
+from PySide6.QtGui import QColor, QIcon, QKeySequence, QPainter, QPen, QPixmap, QShortcut, QTransform
 from PySide6.QtWidgets import (QAbstractItemView, QFileDialog, QFrame, QHBoxLayout, QLabel, QListView,
                                QListWidget, QListWidgetItem, QPushButton, QSizePolicy, QVBoxLayout, QWidget)
 
@@ -17,6 +17,9 @@ THUMB_SIZES = [110, 150, 200, 260]
 
 
 class PageGrid(QListWidget):
+    """Cuadrícula de páginas que se reordenan arrastrándolas con el mouse."""
+    dropped = Signal(list, int)   # filas movidas, posición donde se insertan
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setViewMode(QListView.IconMode)
@@ -24,15 +27,85 @@ class PageGrid(QListWidget):
         self.setWrapping(True)
         self.setResizeMode(QListView.Adjust)
         self.setMovement(QListView.Static)
-        self.setDragDropMode(QAbstractItemView.InternalMove)
+        self.setDragDropMode(QAbstractItemView.DragDrop)
         self.setDefaultDropAction(Qt.MoveAction)
         self.setDragEnabled(True)
         self.setAcceptDrops(True)
-        self.setDropIndicatorShown(True)
+        self.viewport().setAcceptDrops(True)
+        self.setDropIndicatorShown(False)
+        self.setAutoScroll(True)
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.setUniformItemSizes(False)
         self.setSpacing(10)
         self.setTextElideMode(Qt.ElideMiddle)
+        self._drop_at = None
+
+    def insert_index_at(self, pos: QPoint) -> int:
+        """Posición de inserción (0..n) según dónde está el mouse, en orden de lectura."""
+        n = self.count()
+        for i in range(n):
+            r = self.visualItemRect(self.item(i))
+            if pos.y() < r.top():
+                return i
+            if r.top() <= pos.y() <= r.bottom() and pos.x() < r.center().x():
+                return i
+        return n
+
+    def _internal(self, e):
+        return e.source() is self or (e.source() is None and e.mimeData().hasFormat(
+            "application/x-qabstractitemmodeldatalist"))
+
+    def dragEnterEvent(self, e):
+        if self._internal(e):
+            e.setDropAction(Qt.MoveAction)
+            e.accept()
+        else:
+            e.ignore()
+
+    def dragMoveEvent(self, e):
+        if not self._internal(e):
+            e.ignore()
+            return
+        super().dragMoveEvent(e)          # desplazamiento automático cerca de los bordes
+        self._drop_at = self.insert_index_at(e.position().toPoint())
+        self.viewport().update()
+        e.setDropAction(Qt.MoveAction)
+        e.accept()
+
+    def dragLeaveEvent(self, e):
+        self._drop_at = None
+        self.viewport().update()
+        super().dragLeaveEvent(e)
+
+    def dropEvent(self, e):
+        if not self._internal(e):
+            e.ignore()
+            return
+        at = self.insert_index_at(e.position().toPoint())
+        rows = sorted(self.row(it) for it in self.selectedItems())
+        self._drop_at = None
+        self.viewport().update()
+        # Se informa la acción como "ignorada" para que Qt no borre nada por su cuenta
+        e.setDropAction(Qt.IgnoreAction)
+        e.accept()
+        if rows:
+            QTimer.singleShot(0, lambda: self.dropped.emit(rows, at))
+
+    def paintEvent(self, e):
+        super().paintEvent(e)
+        if self._drop_at is None or self.count() == 0:
+            return
+        if self._drop_at < self.count():
+            r = self.visualItemRect(self.item(self._drop_at))
+            x = r.left() - 6
+        else:
+            r = self.visualItemRect(self.item(self.count() - 1))
+            x = r.right() + 6
+        p = QPainter(self.viewport())
+        p.setRenderHint(QPainter.Antialiasing)
+        p.setPen(QPen(QColor(theme.colors()["accent"]), 4, Qt.SolidLine, Qt.RoundCap))
+        p.drawLine(x, r.top() + 4, x, r.bottom() - 4)
+        p.end()
 
 
 class OrganizeTab(QWidget):
@@ -80,14 +153,12 @@ class OrganizeTab(QWidget):
         self.title = QLabel()
         self.title.setObjectName("SectionTitle")
         top.addWidget(self.title, 1)
-        other = QPushButton("Abrir otro PDF")
-        other.setObjectName("Flat")
-        other.setCursor(Qt.PointingHandCursor)
-        other.clicked.connect(self.close_doc)
-        top.addWidget(other)
         self.save_btn = icon_button("Guardar PDF", "save", "Primary")
         self.save_btn.clicked.connect(self.save)
         top.addWidget(self.save_btn)
+        self.exit_btn = icon_button("Salir", "exit", tooltip="Terminar y volver al inicio de esta sección")
+        self.exit_btn.clicked.connect(self.exit_doc)
+        top.addWidget(self.exit_btn)
         el.addLayout(top)
 
         bar = QHBoxLayout()
@@ -118,7 +189,7 @@ class OrganizeTab(QWidget):
         self.banner = Banner()
         el.addWidget(self.banner)
         self.grid = PageGrid()
-        self.grid.model().rowsMoved.connect(self._after_move)
+        self.grid.dropped.connect(self.drop_rows)
         self.grid.itemSelectionChanged.connect(self._update_buttons)
         el.addWidget(self.grid, 1)
         self.result = ResultPanel()
@@ -163,6 +234,7 @@ class OrganizeTab(QWidget):
         entries = [{"src": sid, "page": i, "rotate": 0} for i in range(doc.page_count)]
         self._set_entries(entries)
         self.undo_stack = []
+        self._saved = self.entries()
         self.start_view.hide()
         self.editor.show()
         self.result.hide()
@@ -179,6 +251,17 @@ class OrganizeTab(QWidget):
         self._next_id += 1
         self.sources[sid] = doc
         return sid
+
+    def has_unsaved(self):
+        return bool(self.sources) and self.grid.count() > 0 and self.entries() != getattr(self, "_saved", None)
+
+    def exit_doc(self):
+        from .widgets import ask
+        if self.has_unsaved() and not ask(self, "Cambios sin guardar",
+                                          "Hiciste cambios que todavía no guardaste. ¿Quieres salir sin guardar?",
+                                          "Salir sin guardar", "Volver"):
+            return
+        self.close_doc()
 
     def close_doc(self, silent=False):
         self.timer.stop()
@@ -327,6 +410,22 @@ class OrganizeTab(QWidget):
     # ------------------------------------------------------------------
     # Operaciones
     # ------------------------------------------------------------------
+    def drop_rows(self, rows, at):
+        """Mover las páginas arrastradas a la posición donde se soltaron."""
+        ents = self.entries()
+        rows = [r for r in rows if 0 <= r < len(ents)]
+        if not rows:
+            return
+        sel = [ents[r] for r in rows]
+        rest = [e for i, e in enumerate(ents) if i not in rows]
+        pos = at - sum(1 for r in rows if r < at)
+        pos = max(0, min(len(rest), pos))
+        new = rest[:pos] + sel + rest[pos:]
+        if new == ents:
+            return
+        self._push_undo()
+        self._set_entries(new, select=list(range(pos, pos + len(sel))))
+
     def move_selected(self, d):
         rows = self.selected_rows()
         if not rows:
@@ -449,6 +548,8 @@ class OrganizeTab(QWidget):
             self.error.show_error(f"No se pudo guardar: {e}")
             return
         QApplication.restoreOverrideCursor()
+        if len(ents) == self.grid.count():
+            self._saved = self.entries()
         self.result.show_result(out, f"{msg}\nTiene {r['pages']} páginas.\n\nSe guardó como: {os.path.basename(out)}")
         if settings().get("open_when_done"):
             from .widgets import open_path

@@ -1,9 +1,9 @@
 """Páginas de cada herramienta (Convertir y Herramientas de oficina)."""
 import os
 
-from PySide6.QtCore import QSize, Qt, QTimer
-from PySide6.QtGui import QGuiApplication, QPixmap
-from PySide6.QtWidgets import (QCheckBox, QComboBox, QFileDialog, QFrame, QGridLayout, QHBoxLayout, QLabel,
+from PySide6.QtCore import QSize, Qt, QTimer, Signal
+from PySide6.QtGui import QColor, QGuiApplication, QPainter, QPixmap
+from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QFileDialog, QFrame, QGridLayout, QHBoxLayout, QLabel,
                                QLineEdit, QListWidget, QListWidgetItem, QPlainTextEdit, QPushButton,
                                QSpinBox, QVBoxLayout, QWidget)
 
@@ -270,6 +270,99 @@ class ImageTextPage(ToolPage):
 # HERRAMIENTAS
 # =============================================================================
 
+class ClickableLabel(QLabel):
+    clicked = Signal()
+
+    def mouseReleaseEvent(self, e):
+        if e.button() == Qt.LeftButton:
+            self.clicked.emit()
+        super().mouseReleaseEvent(e)
+
+
+class ZoomPreviewDialog(QDialog):
+    """Vista previa grande del foliado, con zoom."""
+
+    def __init__(self, shots, index=0, parent=None):
+        super().__init__(parent)
+        from PySide6.QtWidgets import QGraphicsScene, QGraphicsView
+        self.setWindowTitle("Vista previa del foliado")
+        self.resize(theme.px(900), theme.px(760))
+        self.shots = shots
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(16, 14, 16, 14)
+        lay.setSpacing(8)
+        top = QHBoxLayout()
+        self.page_btns = []
+        for i, (page_no, text, _png, _r) in enumerate(shots):
+            b = QPushButton(f"Hoja {page_no}  (folio {text})")
+            b.setCheckable(True)
+            b.clicked.connect(lambda _=False, k=i: self.show_shot(k))
+            self.page_btns.append(b)
+            top.addWidget(b)
+        top.addStretch(1)
+        zo = icon_button("", "zoomout", tooltip="Alejar")
+        zi = icon_button("", "zoomin", tooltip="Acercar")
+        near = icon_button("Ver el folio de cerca", "search")
+        whole = icon_button("Hoja completa", "fit")
+        for w in (zo, zi, near, whole):
+            top.addWidget(w)
+        lay.addLayout(top)
+        self.scene = QGraphicsScene(self)
+        self.view = QGraphicsView(self.scene)
+        self.view.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform)
+        self.view.setDragMode(QGraphicsView.ScrollHandDrag)
+        self.view.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+        self.view.setBackgroundBrush(QColor(theme.colors()["surface2"]))
+        self.view.wheelEvent = self._wheel
+        lay.addWidget(self.view, 1)
+        hint = _hint("Usa la rueda del mouse para acercar o alejar, y arrastra para moverte.")
+        lay.addWidget(hint)
+        close = QPushButton("Cerrar")
+        close.setObjectName("Primary")
+        close.clicked.connect(self.accept)
+        row = QHBoxLayout()
+        row.addStretch(1)
+        row.addWidget(close)
+        lay.addLayout(row)
+        zi.clicked.connect(lambda: self.view.scale(1.25, 1.25))
+        zo.clicked.connect(lambda: self.view.scale(0.8, 0.8))
+        near.clicked.connect(self.zoom_folio)
+        whole.clicked.connect(self.fit)
+        self.index = index
+        self.show_shot(index, near=True)
+
+    def _wheel(self, e):
+        k = 1.15 if e.angleDelta().y() > 0 else 1 / 1.15
+        self.view.scale(k, k)
+
+    def show_shot(self, k, near=False):
+        self.index = k
+        for i, b in enumerate(self.page_btns):
+            b.setChecked(i == k)
+        self.scene.clear()
+        pm = QPixmap()
+        pm.loadFromData(self.shots[k][2])
+        item = self.scene.addPixmap(pm)
+        item.setTransformationMode(Qt.SmoothTransformation)
+        self.scene.setSceneRect(item.boundingRect())
+        if near:
+            QTimer.singleShot(0, self.zoom_folio)
+        else:
+            QTimer.singleShot(0, self.fit)
+
+    def fit(self):
+        self.view.resetTransform()
+        self.view.fitInView(self.scene.sceneRect(), Qt.KeepAspectRatio)
+
+    def zoom_folio(self):
+        x0, y0, x1, y1 = self.shots[self.index][3]
+        from PySide6.QtCore import QRectF
+        w, h = x1 - x0, y1 - y0
+        r = QRectF(x0 - w * 1.6, y0 - h * 2.2, w * 4.2, h * 6.0).intersected(self.scene.sceneRect())
+        self.view.resetTransform()
+        self.view.fitInView(r, Qt.KeepAspectRatio)
+
+
 class FolioPage(ToolPage):
     title = "Foliar"
     subtitle = "Numera las hojas del documento en la esquina, como se pide en los expedientes."
@@ -280,17 +373,26 @@ class FolioPage(ToolPage):
     POSITIONS = [("sup-der", "Arriba a la derecha"), ("sup-centro", "Arriba al centro"),
                  ("sup-izq", "Arriba a la izquierda"), ("inf-der", "Abajo a la derecha"),
                  ("inf-centro", "Abajo al centro"), ("inf-izq", "Abajo a la izquierda")]
+    COLORS = [("azul", "Azul", "#0D389E"), ("rojo", "Rojo", "#CC121F"), ("negro", "Negro", "#000000")]
 
     def build_options(self, lay):
+        from ..config import settings as _st
         self.direction = self.radio_group(lay, [
             ("adelante", "De adelante hacia atrás  (la primera hoja es el folio 1)"),
             ("atras", "De atrás hacia adelante  (la última hoja es el folio 1)")], title="Orden de la numeración")
+        self.fmt = self.radio_group(lay, [
+            ("numero", "Solo el número:  1, 2, 3 …"),
+            ("total", "Número y total:  1/20, 2/20 … 20/20")], title="Cómo se escribe")
         grid = QGridLayout()
         grid.setHorizontalSpacing(14)
         grid.setVerticalSpacing(8)
         self.start_spin = QSpinBox()
         self.start_spin.setRange(1, 99999)
         self.start_spin.setValue(1)
+        self.zeros = QComboBox()
+        for k, t in ((0, "Sin ceros"), (2, "2 cifras:  01, 02 …"), (3, "3 cifras:  001, 002 …"),
+                     (4, "4 cifras:  0001, 0002 …"), (5, "5 cifras:  00001 …"), (6, "6 cifras:  000001 …")):
+            self.zeros.addItem(t, k)
         self.pos = QComboBox()
         for k, t in self.POSITIONS:
             self.pos.addItem(t, k)
@@ -302,34 +404,64 @@ class FolioPage(ToolPage):
         self.prefix.setPlaceholderText("Opcional, por ejemplo: Folio ")
         self.skip = QSpinBox()
         self.skip.setRange(0, 9999)
+        # color
+        self.color_value = _st().data.get("folio_color", "azul")
+        color_row = QHBoxLayout()
+        color_row.setSpacing(6)
+        from PySide6.QtWidgets import QButtonGroup
+        self.color_group = QButtonGroup(self)
+        for i, (key, name, hexc) in enumerate(self.COLORS):
+            b = QPushButton(name)
+            b.setCheckable(True)
+            b.setCursor(Qt.PointingHandCursor)
+            qc = QColor(hexc)
+            soft = f"rgba({qc.red()},{qc.green()},{qc.blue()},40)"
+            b.setStyleSheet(f"QPushButton {{ color: {hexc}; font-weight: 700; }}"
+                            f"QPushButton:checked {{ border: 3px solid {hexc}; background: {soft}; }}")
+            b.setProperty("key", key)
+            self.color_group.addButton(b, i)
+            color_row.addWidget(b)
+        self.other_color = QPushButton("Otro color…")
+        self.other_color.setCheckable(True)
+        self.color_group.addButton(self.other_color, len(self.COLORS))
+        color_row.addWidget(self.other_color)
+        color_row.addStretch(1)
+        self._select_color(self.color_value)
+        self.color_group.idClicked.connect(self._color_clicked)
         grid.addWidget(QLabel("Empezar en el número:"), 0, 0)
         grid.addWidget(self.start_spin, 0, 1)
-        grid.addWidget(QLabel("Posición:"), 1, 0)
-        grid.addWidget(self.pos, 1, 1)
-        grid.addWidget(QLabel("Tamaño del número:"), 2, 0)
-        grid.addWidget(self.size, 2, 1)
-        grid.addWidget(QLabel("Texto antes del número:"), 3, 0)
-        grid.addWidget(self.prefix, 3, 1)
-        grid.addWidget(QLabel("No foliar las primeras hojas:"), 4, 0)
-        grid.addWidget(self.skip, 4, 1)
+        grid.addWidget(QLabel("Ceros a la izquierda:"), 1, 0)
+        grid.addWidget(self.zeros, 1, 1)
+        grid.addWidget(QLabel("Color del folio:"), 2, 0)
+        grid.addLayout(color_row, 2, 1)
+        grid.addWidget(QLabel("Posición:"), 3, 0)
+        grid.addWidget(self.pos, 3, 1)
+        grid.addWidget(QLabel("Tamaño del número:"), 4, 0)
+        grid.addWidget(self.size, 4, 1)
+        grid.addWidget(QLabel("Texto antes del número:"), 5, 0)
+        grid.addWidget(self.prefix, 5, 1)
+        grid.addWidget(QLabel("No foliar las primeras hojas:"), 6, 0)
+        grid.addWidget(self.skip, 6, 1)
         grid.setColumnStretch(2, 1)
         lay.addLayout(grid)
         self.box = QCheckBox("Número dentro de un recuadro blanco (se lee mejor sobre el texto)")
         self.box.setChecked(True)
-        self.zeros = QCheckBox("Con ceros a la izquierda (0001, 0002…)")
         lay.addWidget(self.box)
-        lay.addWidget(self.zeros)
         # vista previa
         pv = QLabel("Vista previa")
         pv.setObjectName("SectionTitle")
         lay.addWidget(pv)
+        lay.addWidget(_hint("Haz clic en una hoja para verla más grande y acercarte al número."))
         self.preview_row = QHBoxLayout()
         self.preview_labels = []
-        for _ in range(2):
+        for k in range(2):
             col = QVBoxLayout()
-            img = QLabel()
+            img = ClickableLabel()
             img.setAlignment(Qt.AlignCenter)
-            img.setMinimumSize(QSize(theme.px(150), theme.px(200)))
+            img.setMinimumSize(QSize(theme.px(170), theme.px(230)))
+            img.setCursor(Qt.PointingHandCursor)
+            img.setToolTip("Clic para ver más grande")
+            img.clicked.connect(lambda k=k: self._open_zoom(k))
             cap = QLabel()
             cap.setObjectName("Muted")
             cap.setAlignment(Qt.AlignCenter)
@@ -337,27 +469,58 @@ class FolioPage(ToolPage):
             col.addWidget(cap)
             self.preview_row.addLayout(col)
             self.preview_labels.append((img, cap))
+        big = icon_button("Ver más grande", "zoomin")
+        big.clicked.connect(lambda: self._open_zoom(0))
+        bcol = QVBoxLayout()
+        bcol.addStretch(1)
+        bcol.addWidget(big)
+        bcol.addStretch(1)
+        self.preview_row.addLayout(bcol)
         self.preview_row.addStretch(1)
         lay.addLayout(self.preview_row)
+        self._shots = []
         self._pv_timer = QTimer(self)
         self._pv_timer.setSingleShot(True)
         self._pv_timer.setInterval(250)
         self._pv_timer.timeout.connect(self._preview)
-        for w in (self.direction,):
-            w.buttonToggled.connect(lambda *a: self._pv_timer.start())
+        for g in (self.direction, self.fmt):
+            g.buttonToggled.connect(lambda *a: self._pv_timer.start())
         for w in (self.start_spin, self.skip):
             w.valueChanged.connect(lambda *a: self._pv_timer.start())
-        for w in (self.pos, self.size):
+        for w in (self.pos, self.size, self.zeros):
             w.currentIndexChanged.connect(lambda *a: self._pv_timer.start())
         self.prefix.textChanged.connect(lambda *a: self._pv_timer.start())
         self.box.toggled.connect(lambda *a: self._pv_timer.start())
-        self.zeros.toggled.connect(lambda *a: self._pv_timer.start())
         return True
+
+    def _select_color(self, value):
+        for b in self.color_group.buttons():
+            if b.property("key") == value:
+                b.setChecked(True)
+                return
+        self.other_color.setChecked(True)
+        self.other_color.setStyleSheet(f"QPushButton {{ color: {value}; font-weight: 700; }}"
+                                       f"QPushButton:checked {{ border: 3px solid {value}; }}")
+
+    def _color_clicked(self, idx):
+        if idx == len(self.COLORS):
+            from PySide6.QtWidgets import QColorDialog
+            start = QColor(self.color_value) if str(self.color_value).startswith("#") else QColor("#0D389E")
+            c = QColorDialog.getColor(start, self, "Color del folio")
+            if c.isValid():
+                self.color_value = c.name()
+            self._select_color(self.color_value)
+        else:
+            self.color_value = self.color_group.button(idx).property("key")
+        from ..config import settings as _st
+        _st().set("folio_color", self.color_value)
+        self._pv_timer.start()
 
     def _opts(self):
         return dict(direction=self.group_value(self.direction), start=self.start_spin.value(),
                     position=self.pos.currentData(), size=self.size.currentData(), box=self.box.isChecked(),
-                    zeros=4 if self.zeros.isChecked() else 0, prefix=self.prefix.text(), skip=self.skip.value())
+                    zeros=self.zeros.currentData(), prefix=self.prefix.text(), skip=self.skip.value(),
+                    fmt=self.group_value(self.fmt), color=self.color_value)
 
     def on_files_changed(self):
         self._pv_timer.start()
@@ -366,6 +529,7 @@ class FolioPage(ToolPage):
         for img, cap in self.preview_labels:
             img.clear()
             cap.clear()
+        self._shots = []
         if not self.files or self.doc_info.get("locked"):
             return
         try:
@@ -373,12 +537,24 @@ class FolioPage(ToolPage):
             shots = folio_preview(self.files[0], dpi=48, **self._opts())
         except Exception:
             return
-        for (img, cap), (page_no, folio, png) in zip(self.preview_labels, shots):
+        for (img, cap), (page_no, folio, png, _r) in zip(self.preview_labels, shots):
             pm = QPixmap()
             pm.loadFromData(png)
             img.setPixmap(pm.scaled(theme.px(170), theme.px(230), Qt.KeepAspectRatio, Qt.SmoothTransformation))
             img.setStyleSheet(f"border: 1px solid {theme.colors()['border']}; background: white;")
             cap.setText(f"Hoja {page_no} → folio {folio}")
+
+    def _open_zoom(self, k):
+        if not self.files or self.doc_info.get("locked"):
+            return
+        from PySide6.QtWidgets import QApplication
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            from ..core.tools import folio_preview
+            shots = folio_preview(self.files[0], dpi=170, **self._opts())
+        finally:
+            QApplication.restoreOverrideCursor()
+        ZoomPreviewDialog(shots, min(k, len(shots) - 1), self).exec()
 
     def make_task(self):
         src = self.files[0]

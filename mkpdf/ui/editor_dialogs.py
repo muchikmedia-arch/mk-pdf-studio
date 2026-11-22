@@ -3,7 +3,7 @@ import os
 
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap
-from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QComboBox, QDialog, QFileDialog, QGridLayout, QHBoxLayout,
+from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QComboBox, QDialog, QDoubleSpinBox, QFileDialog, QGridLayout, QHBoxLayout,
                                QLabel, QLineEdit, QListView, QListWidget, QListWidgetItem, QPlainTextEdit,
                                QPushButton, QRadioButton, QSpinBox, QVBoxLayout, QWidget)
 
@@ -147,6 +147,21 @@ class SignatureDialog(QDialog):
         row.addStretch(1)
         row.addWidget(delete)
         lay.addLayout(row)
+        wrow = QHBoxLayout()
+        wrow.addWidget(QLabel("Ancho al ponerlo en el documento:"))
+        self.width = QDoubleSpinBox()
+        self.width.setRange(0.5, 25.0)
+        self.width.setSingleStep(0.1)
+        self.width.setDecimals(1)
+        self.width.setSuffix(" cm")
+        self.width.setValue(5.0)
+        self.width.valueChanged.connect(self._width_changed)
+        wrow.addWidget(self.width)
+        wrow.addStretch(1)
+        lay.addLayout(wrow)
+        lay.addWidget(_muted("Mide tu sello o firma real con una regla y escribe aquí su ancho. "
+                             "Se recuerda para cada firma o sello."))
+        self.list.currentItemChanged.connect(self._item_changed)
         b, self.ok = _buttons(self, "Poner en el documento")
         self.ok.clicked.disconnect()
         self.ok.clicked.connect(self._use)
@@ -174,6 +189,7 @@ class SignatureDialog(QDialog):
         self.empty.setVisible(self.list.count() == 0)
         if self.list.count():
             self.list.setCurrentRow(0)
+            self._item_changed(self.list.currentItem())
 
     def _add(self):
         f, _ = QFileDialog.getOpenFileName(self, "Imagen de la firma o sello", settings().get("last_dir") or "",
@@ -193,11 +209,20 @@ class SignatureDialog(QDialog):
             return
         from .widgets import ask
         if ask(self, "Borrar", "¿Borrar esta firma o sello de la biblioteca?", "Borrar", "Cancelar"):
-            try:
-                os.remove(it.data(Qt.UserRole))
-            except Exception:
-                pass
+            ec.delete_signature(it.data(Qt.UserRole))
             self._load()
+
+    def _item_changed(self, it, *a):
+        if it is None or not hasattr(self, "width"):
+            return
+        self.width.blockSignals(True)
+        self.width.setValue(ec.signature_width(it.data(Qt.UserRole)))
+        self.width.blockSignals(False)
+
+    def _width_changed(self, v):
+        it = self.list.currentItem()
+        if it:
+            ec.set_signature_width(it.data(Qt.UserRole), v)
 
     def _use(self):
         it = self.list.currentItem()
@@ -205,6 +230,7 @@ class SignatureDialog(QDialog):
             inform(self, "Elige una firma", "Primero agrega o elige una firma o sello.")
             return
         self.chosen = it.data(Qt.UserRole)
+        self.chosen_width_cm = self.width.value()
         self.accept()
 
 

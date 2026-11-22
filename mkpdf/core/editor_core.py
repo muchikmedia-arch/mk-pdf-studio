@@ -361,43 +361,68 @@ def signatures_dir():
     return d
 
 
-def import_signature(path: str, remove_white=True, name: str = None) -> str:
-    """Guarda una imagen de firma o sello en la biblioteca (PNG con fondo transparente)."""
-    import numpy as np
-    from PIL import Image, ImageOps
-    im = Image.open(path)
-    im = ImageOps.exif_transpose(im).convert("RGBA")
-    a = np.asarray(im).astype(np.float32)
-    rgb = a[:, :, :3]
-    if remove_white:
-        lum = rgb @ np.array([0.299, 0.587, 0.114], dtype=np.float32)
-        # fondo claro -> transparente, con bordes suaves
-        bg = np.percentile(lum, 90)
-        thr_hi = min(250.0, bg - 8)
-        thr_lo = max(0.0, thr_hi - 70)
-        alpha = np.clip((thr_hi - lum) / max(1.0, thr_hi - thr_lo), 0, 1) * 255
-        a[:, :, 3] = np.minimum(a[:, :, 3], alpha)
-        # tinta un poco más intensa
-        a[:, :, :3] = np.clip(rgb * 0.85, 0, 255)
-    alpha = a[:, :, 3]
-    ys, xs = np.where(alpha > 25)
-    if len(xs):
-        pad = 6
-        x0, x1 = max(0, xs.min() - pad), min(a.shape[1], xs.max() + pad)
-        y0, y1 = max(0, ys.min() - pad), min(a.shape[0], ys.max() + pad)
-        a = a[y0:y1, x0:x1]
-    out = Image.fromarray(a.astype(np.uint8), "RGBA")
-    if max(out.size) > 1400:
-        out.thumbnail((1400, 1400), Image.LANCZOS)
-    base = name or os.path.splitext(os.path.basename(path))[0]
+def _unique_png(base):
     base = re.sub(r"[^\w\- áéíóúñÁÉÍÓÚÑ]", "", base).strip() or "firma"
     dst = os.path.join(signatures_dir(), base + ".png")
     i = 1
     while os.path.exists(dst):
         dst = os.path.join(signatures_dir(), f"{base} ({i}).png")
         i += 1
-    out.save(dst)
     return dst
+
+
+def save_signature_rgba(rgba, name: str, width_cm: float = None) -> str:
+    from . import bgremove
+    dst = _unique_png(name)
+    bgremove.save_png(rgba, dst)
+    if width_cm:
+        set_signature_width(dst, width_cm)
+    return dst
+
+
+def import_signature(path: str, remove_white=True, name: str = None) -> str:
+    """Guarda una imagen de firma o sello en la biblioteca (PNG con fondo transparente)."""
+    import numpy as np
+    from PIL import Image, ImageOps
+    from . import bgremove
+    if remove_white:
+        rgba = bgremove.process_file(path, max_side=1600)
+    else:
+        im = ImageOps.exif_transpose(Image.open(path)).convert("RGBA")
+        im.thumbnail((1600, 1600), Image.LANCZOS)
+        rgba = np.asarray(im).copy()
+    base = name or os.path.splitext(os.path.basename(path))[0]
+    return save_signature_rgba(rgba, base)
+
+
+def _meta_path(png_path):
+    return os.path.splitext(png_path)[0] + ".json"
+
+
+def signature_width(png_path, default=5.0) -> float:
+    import json
+    try:
+        with open(_meta_path(png_path), "r", encoding="utf-8") as f:
+            return float(json.load(f).get("width_cm", default))
+    except Exception:
+        return default
+
+
+def set_signature_width(png_path, width_cm: float):
+    import json
+    try:
+        with open(_meta_path(png_path), "w", encoding="utf-8") as f:
+            json.dump({"width_cm": round(float(width_cm), 2)}, f)
+    except Exception:
+        pass
+
+
+def delete_signature(png_path):
+    for p in (png_path, _meta_path(png_path)):
+        try:
+            os.remove(p)
+        except Exception:
+            pass
 
 
 def list_signatures():

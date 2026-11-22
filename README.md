@@ -8,7 +8,7 @@ Web: [www.muchikmedia.com](https://www.muchikmedia.com) · Correo: muchikmedia@g
 
 ## Descargar
 
-**[Descargar MK PDF Studio 1.2.0 para Windows](https://github.com/muchikmedia-arch/mk-pdf-studio/raw/descargas/MK-PDF-Studio-Instalador-1.2.0.exe)** (75 MB)
+**[Descargar MK PDF Studio para Windows](https://github.com/muchikmedia-arch/mk-pdf-studio/raw/descargas/MK-PDF-Studio-Instalador.exe)** (75 MB) · versión 1.3.0
 
 Requiere Windows 10 u 11 de 64 bits. No necesita permisos de administrador.
 Si ya lo tienes instalado, el programa te avisa solo cuando hay una versión nueva.
@@ -31,9 +31,10 @@ Si ya lo tienes instalado, el programa te avisa solo cuando hay una versión nue
 - Mover, quitar, girar, agregar y extraer páginas
 
 **Herramientas**
-- Foliar (de adelante hacia atrás o de atrás hacia adelante)
+- Foliar (de adelante hacia atrás o al revés, formato 1/20, ceros a la izquierda, color rojo o azul)
 - Todas las páginas a tamaño A4, Carta u Oficio
 - Unir / armar expediente (PDF, fotos, Word y Excel), dividir, comprimir
+- Quitar el fondo a firmas y sellos (PNG transparente) y mejorar su color
 - Fotos del celular a PDF tipo escáner, marca de agua, contraseña, limpiar escaneos, buscar en una carpeta
 
 El programa avisa cuando hay una versión nueva y se actualiza con un clic.

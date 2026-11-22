@@ -1,4 +1,4 @@
-MK PDF Studio - Versión 1.1.0 (Etapa 2)
+MK PDF Studio - Versión 1.3.0
 Desarrollado por Alex Vasquez Caballero - Muchik Media | Apps
 Web: www.muchikmedia.com   Correo: muchikmedia@gmail.com
 
@@ -23,6 +23,7 @@ QUÉ PUEDE HACER
     - Foliar (de adelante hacia atrás o de atrás hacia adelante)
     - Todas las páginas a tamaño A4 (o Carta / Oficio)
     - Unir / armar expediente (PDF, fotos, Word y Excel)
+    - Quitar el fondo a firmas y sellos y mejorar su color
     - Dividir, comprimir, fotos a PDF tipo escáner
     - Marca de agua, contraseña, limpiar escaneos, buscar en una carpeta
 

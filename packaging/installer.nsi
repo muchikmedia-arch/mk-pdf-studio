@@ -6,7 +6,7 @@ RequestExecutionLevel user
 ManifestDPIAware true
 
 !define APPNAME "MK PDF Studio"
-!define VERSION "1.2.0"
+!define VERSION "1.3.0"
 !define PUBLISHER "Muchik Media"
 !define DEVELOPER "Alex Vasquez Caballero"
 !define WEB "https://www.muchikmedia.com"
@@ -24,7 +24,7 @@ InstallDir "$LOCALAPPDATA\Programs\${APPNAME}"
 InstallDirRegKey HKCU "Software\${APPNAME}" "InstallDir"
 BrandingText "${APPNAME} ${VERSION} · Muchik Media | Apps"
 
-VIProductVersion "1.2.0.0"
+VIProductVersion "1.3.0.0"
 VIAddVersionKey /LANG=1034 "ProductName" "${APPNAME}"
 VIAddVersionKey /LANG=1034 "CompanyName" "${PUBLISHER}"
 VIAddVersionKey /LANG=1034 "LegalCopyright" "(c) 2026 ${DEVELOPER}"

@@ -306,7 +306,7 @@ class AboutDialog(QDialog):
         name.setObjectName("PageTitle")
         name.setAlignment(Qt.AlignCenter)
         lay.addWidget(name)
-        ver = QLabel(f"Versión {APP_VERSION}  ·  {APP_EDITION}")
+        ver = QLabel(f"Versión {APP_VERSION}")
         ver.setObjectName("Muted")
         ver.setAlignment(Qt.AlignCenter)
         lay.addWidget(ver)
@@ -368,7 +368,7 @@ class AboutDialog(QDialog):
 
         lay.addSpacing(8)
         lay.addWidget(_section("Información técnica"))
-        self.tech = (f"{APP_NAME} {APP_VERSION} ({APP_EDITION})\n"
+        self.tech = (f"{APP_NAME} {APP_VERSION}\n"
                      f"Sistema: {platform.system()} {platform.release()} ({platform.machine()})\n"
                      f"Python {platform.python_version()}\n"
                      f"Ajustes y registro de errores: {user_data_dir()}")

@@ -124,7 +124,8 @@ class UpdateDialog(QDialog):
         row = QHBoxLayout()
         self.web_btn = QPushButton("Descargar desde la web")
         self.web_btn.setObjectName("Flat")
-        self.web_btn.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(updates.RELEASES_PAGE)))
+        self.web_btn.clicked.connect(
+            lambda: QDesktopServices.openUrl(QUrl(self.info.get("page") or updates.RELEASES_PAGE)))
         row.addWidget(self.web_btn)
         row.addStretch(1)
         self.cancel_btn = QPushButton("Ahora no")

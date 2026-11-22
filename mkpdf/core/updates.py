@@ -16,7 +16,13 @@ from ..config import APP_VERSION
 GITHUB_USER = "muchikmedia-arch"
 GITHUB_REPO = "mk-pdf-studio"
 VERSION_URL = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/main/version.json"
-RELEASES_PAGE = f"https://github.com/{GITHUB_USER}/{GITHUB_REPO}/releases/latest"
+DOWNLOAD_BRANCH = "descargas"
+RELEASES_PAGE = f"https://github.com/{GITHUB_USER}/{GITHUB_REPO}#descargar"
+
+
+def download_url(version: str) -> str:
+    return (f"https://github.com/{GITHUB_USER}/{GITHUB_REPO}/raw/{DOWNLOAD_BRANCH}/"
+            f"MK-PDF-Studio-Instalador-{version}.exe")
 USER_AGENT = f"MKPDFStudio/{APP_VERSION} (Windows)"
 
 

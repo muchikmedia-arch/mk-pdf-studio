@@ -7,7 +7,8 @@
     "PDF a PowerPoint y Word a imágenes",
     "El logo del programa aparece en la barra de tareas"
   ],
-  "installer": "https://github.com/muchikmedia-arch/mk-pdf-studio/releases/download/v1.2.0/MK-PDF-Studio-Instalador-1.2.0.exe",
-  "sha256": "1826b6daf696c932d800f1a58cf3fea4d13abd90aa65438eab878c64e0069991",
-  "size": 75198697
+  "installer": "https://github.com/muchikmedia-arch/mk-pdf-studio/raw/descargas/MK-PDF-Studio-Instalador-1.2.0.exe",
+  "sha256": "af4c6a243c055c4a41b7d95a55a1180aa90ec9ca911bee351d817a687f0d8bcc",
+  "size": 75195707,
+  "page": "https://github.com/muchikmedia-arch/mk-pdf-studio#descargar"
 }

@@ -8,8 +8,10 @@ Web: [www.muchikmedia.com](https://www.muchikmedia.com) · Correo: muchikmedia@g
 
 ## Descargar
 
-Descarga el instalador más reciente en **[Releases](../../releases/latest)**.
+**[Descargar MK PDF Studio 1.2.0 para Windows](https://github.com/muchikmedia-arch/mk-pdf-studio/raw/descargas/MK-PDF-Studio-Instalador-1.2.0.exe)** (75 MB)
+
 Requiere Windows 10 u 11 de 64 bits. No necesita permisos de administrador.
+Si ya lo tienes instalado, el programa te avisa solo cuando hay una versión nueva.
 
 ## Qué puede hacer
 

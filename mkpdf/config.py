@@ -4,10 +4,11 @@ import os
 import sys
 
 APP_NAME = "MK PDF Studio"
-APP_VERSION = "1.3.0"
+APP_VERSION = "1.3.1"
 APP_EDITION = "Etapa 2"
 APP_YEAR = "2026"
-DEVELOPER = "Alex Vasquez Caballero"
+DEVELOPER = "Muchik Media | Apps"
+LOCATION = "Trujillo - Perú"
 COMPANY = "Muchik Media | Apps"
 COMPANY_WEB = "www.muchikmedia.com"
 COMPANY_EMAIL = "muchikmedia@gmail.com"

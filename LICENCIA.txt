@@ -1,5 +1,5 @@
 MK PDF Studio
-Copyright (C) 2026 Alex Vasquez Caballero - Muchik Media | Apps
+Copyright (C) 2026 Muchik Media | Apps - Trujillo, Perú
 www.muchikmedia.com - muchikmedia@gmail.com
 
 Este programa es software libre: puede redistribuirlo y/o modificarlo bajo los

@@ -1,8 +1,8 @@
 #include <winver.h>
 1 ICON "app.ico"
 1 VERSIONINFO
-FILEVERSION 1,3,0,0
-PRODUCTVERSION 1,3,0,0
+FILEVERSION 1,3,1,0
+PRODUCTVERSION 1,3,1,0
 FILEOS VOS_NT_WINDOWS32
 FILETYPE VFT_APP
 BEGIN
@@ -12,12 +12,12 @@ BEGIN
     BEGIN
       VALUE "CompanyName", "Muchik Media"
       VALUE "FileDescription", "MK PDF Studio"
-      VALUE "FileVersion", "1.3.0"
+      VALUE "FileVersion", "1.3.1"
       VALUE "InternalName", "MK PDF Studio"
-      VALUE "LegalCopyright", "(c) 2026 Alex Vasquez Caballero - Muchik Media"
+      VALUE "LegalCopyright", "(c) 2026 Muchik Media | Apps - Trujillo, Peru"
       VALUE "OriginalFilename", "MK PDF Studio.exe"
       VALUE "ProductName", "MK PDF Studio"
-      VALUE "ProductVersion", "1.3.0"
+      VALUE "ProductVersion", "1.3.1"
     END
   END
   BLOCK "VarFileInfo"

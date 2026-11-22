@@ -11,7 +11,7 @@ from .updater import UpdateBar, UpdateChecker, UpdateDialog
 from .bgpage import BgRemovePage
 from .share import ShareDialog
 from .widgets import Card, IconLabel, icon_button, refresh_button_icons
-from ..config import APP_EDITION, APP_NAME, APP_VERSION, COMPANY, DEVELOPER, settings
+from ..config import APP_NAME, APP_VERSION, COMPANY, LOCATION, settings
 
 
 class CardHome(QStackedWidget):
@@ -210,7 +210,7 @@ class MainWindow(QMainWindow):
         footer.setObjectName("Footer")
         fl = QHBoxLayout(footer)
         fl.setContentsMargins(20, 6, 20, 6)
-        dev = QLabel(f"Desarrollado por {DEVELOPER}  ·  {COMPANY}")
+        dev = QLabel(f"Desarrollado por {COMPANY}  ·  {LOCATION}")
         dev.setObjectName("FooterText")
         ver = QLabel(f"Versión {APP_VERSION}  ·  Funciona sin internet")
         ver.setObjectName("FooterText")

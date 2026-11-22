@@ -228,7 +228,7 @@ class BgRemovePage(QWidget):
         lrow = QHBoxLayout()
         lrow.addWidget(QLabel("Nombre:"))
         self.lib_name = QLineEdit()
-        self.lib_name.setPlaceholderText("Por ejemplo: Firma Alex, Sello Mesa de Partes")
+        self.lib_name.setPlaceholderText("Por ejemplo: Mi firma, Sello Mesa de Partes")
         lrow.addWidget(self.lib_name, 1)
         lrow.addWidget(QLabel("Ancho real:"))
         self.lib_width = QDoubleSpinBox()

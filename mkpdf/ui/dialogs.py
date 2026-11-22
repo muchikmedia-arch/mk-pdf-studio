@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QComboBox, QDialog, QFil
 from . import icons, theme
 from .widgets import icon_button
 from ..config import (APP_EDITION, APP_NAME, APP_VERSION, APP_YEAR, COMPANY, COMPANY_EMAIL, COMPANY_WEB,
-                      DEVELOPER, settings, user_data_dir)
+                      LOCATION, settings, user_data_dir)
 
 
 def _section(text):
@@ -320,10 +320,10 @@ class AboutDialog(QDialog):
         dev_t = QLabel("Desarrollado por")
         dev_t.setObjectName("Muted")
         dev_t.setAlignment(Qt.AlignCenter)
-        dev = QLabel(DEVELOPER)
+        dev = QLabel(COMPANY)
         dev.setObjectName("Big")
         dev.setAlignment(Qt.AlignCenter)
-        comp = QLabel(COMPANY)
+        comp = QLabel(LOCATION)
         comp.setAlignment(Qt.AlignCenter)
         comp.setStyleSheet("font-weight: 600;")
         web = QLabel(f'Web: <a href="https://{COMPANY_WEB}" style="color:{c["accent"]}">{COMPANY_WEB}</a>')
@@ -341,7 +341,7 @@ class AboutDialog(QDialog):
                       "Funciona sin internet: tus documentos nunca salen de tu computadora.")
         desc.setAlignment(Qt.AlignCenter)
         lay.addWidget(desc)
-        copy = QLabel(f"© {APP_YEAR} {DEVELOPER} · {COMPANY}")
+        copy = QLabel(f"© {APP_YEAR} {COMPANY} · {LOCATION}")
         copy.setAlignment(Qt.AlignCenter)
         copy.setObjectName("Muted")
         lay.addWidget(copy)

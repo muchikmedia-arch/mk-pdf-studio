@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (QDialog, QFileDialog, QFrame, QHBoxLayout, QLabel
 
 from . import theme
 from .widgets import icon_button, inform, show_in_folder
-from ..config import APP_NAME, COMPANY, COMPANY_WEB, DEVELOPER
+from ..config import APP_NAME, COMPANY, COMPANY_WEB, LOCATION
 from ..core import updates
 
 DOWNLOAD_LINK = (f"https://github.com/{updates.GITHUB_USER}/{updates.GITHUB_REPO}/raw/"
@@ -36,7 +36,7 @@ def share_message(bold="*"):
             f"Descárgalo aquí:\n{DOWNLOAD_LINK}\n\n"
             f"{INSTRUCTIONS}\n"
             f"Más información: {PAGE_LINK}\n"
-            f"Desarrollado por {DEVELOPER} – {COMPANY} ({COMPANY_WEB})")
+            f"Desarrollado por {COMPANY} – {LOCATION} ({COMPANY_WEB})")
 
 
 def _has_protocol(name):

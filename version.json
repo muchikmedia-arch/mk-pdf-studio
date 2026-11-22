@@ -1,15 +1,12 @@
 {
-  "version": "1.3.0",
+  "version": "1.3.1",
   "date": "2026-11-22",
   "notes": [
-    "Organizar páginas: ahora puedes arrastrar las páginas con el mouse, y hay un botón «Salir»",
-    "Foliar: formato 1/20, cantidad de ceros a elección, color rojo o azul y vista previa con zoom",
-    "Nueva herramienta: quitar el fondo a firmas y sellos y mejorar su color",
-    "Editar PDF: tamaño exacto en centímetros para firmas y sellos",
-    "Botón «Compartir» para enviar el programa por WhatsApp, Messenger o correo"
+    "Créditos actualizados: Muchik Media | Apps · Trujillo - Perú",
+    "Incluye todas las mejoras de la 1.3.0: arrastrar páginas, foliado 1/20 con color, quitar fondo a firmas y sellos, tamaño en cm y botón Compartir"
   ],
-  "installer": "https://github.com/muchikmedia-arch/mk-pdf-studio/raw/descargas/MK-PDF-Studio-Instalador-1.3.0.exe",
-  "sha256": "443ab13864b918167e501e9ff0f7dd6e2e3b2ab041a22b50c3cf7f652155afeb",
-  "size": 75190652,
+  "installer": "https://github.com/muchikmedia-arch/mk-pdf-studio/raw/descargas/MK-PDF-Studio-Instalador-1.3.1.exe",
+  "sha256": "a99e613ee1c21717ce41fc51918e04f76ff24a30671ab13bf9427abd0f06c784",
+  "size": 75208202,
   "page": "https://github.com/muchikmedia-arch/mk-pdf-studio#descargar"
 }
